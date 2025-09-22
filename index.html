@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Captioning Service</title>
+    <style>
+        :root {
+            --primary-color: #FF5722;
+            --text-color: #333333;
+            --background-gradient: linear-gradient(135deg, #f0f4ff 0%, #d8e2ff 100%);
+            --card-bg: white;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--background-gradient);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        
+        .header {
+            padding: 20px 40px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo {
+            font-weight: bold;
+            font-size: 28px;
+            color: #333;
+        }
+        
+        .logo-icon {
+            color: var(--primary-color);
+            margin-right: 10px;
+            font-size: 32px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        
+        .hero-title {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .hero-subtitle {
+            font-size: 2rem;
+            margin-top: 10px;
+            color: #555;
+        }
+        
+        .highlight {
+            color: var(--primary-color);
+        }
+        
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 30px;
+            margin-bottom: 30px;
+            max-width: 600px;
+            text-align: center;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        input[type="file"], select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            background-color: #f9f9f9;
+        }
+        
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            width: 100%;
+        }
+        
+        button:hover {
+            background-color: #e64a19;
+        }
+        
+        .preview-container {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .preview-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        
+        .result-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .result {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 20px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <span class="logo-icon">⚡</span> Caption<span class="highlight">AI</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1 class="hero-title">Image Captioning<span class="highlight">.</span></h1>
+        <h2 class="hero-subtitle">In your language<span class="highlight">.</span></h2>
+
+        <div class="card">
+            <form id="captionForm" action="/predict" method="post" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="file">Choose an image:</label>
+                    <input type="file" name="file" id="file" accept="image/*" required onchange="previewImage(event)">
+                </div>
+                
+                <div class="form-group">
+                    <label for="language">Choose Language for Caption:</label>
+                    <select name="language" id="language">
+                        <option value="hi">Hindi</option>
+                        <option value="bn">Bengali</option>
+                        <option value="te">Telugu</option>
+                        <option value="mr">Marathi</option>
+                        <option value="ta">Tamil</option>
+                        <option value="ur">Urdu</option>
+                        <option value="gu">Gujarati</option>
+                        <option value="ml">Malayalam</option>
+                        <option value="kn">Kannada</option>
+                        <option value="pa">Punjabi</option>
+                        <option value="or">Odia</option>
+                        <option value="as">Assamese</option>
+                        <option value="ma">Maithili</option>
+                        <option value="ne">Nepali</option>
+                        <option value="si">Sinhala</option>
+                    </select>
+                </div>
+                
+                <div class="preview-container" id="imagePreview">
+                    <h3>Selected Image:</h3>
+                    <img id="preview" class="preview-image" src="#" alt="Uploaded Image Preview">
+                </div>
+                
+                <button type="submit">Generate Caption</button>
+            </form>
+        </div>
+
+        {% if prediction %}
+        <div class="result-container">
+            <div class="result">
+                <h3>Caption:</h3>
+                <p>{{ prediction }}</p>
+            </div>
+            <div class="result">
+                <h3>Subtitle:</h3>
+                <p>{{ subtitle }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function previewImage(event) {
+            var file = event.target.files[0];
+            if (!file) {
+                document.getElementById("imagePreview").style.display = "none";
+                return;
+            }
+            var reader = new FileReader();
+            reader.onload = function() {
+                var img = document.getElementById("preview");
+                img.src = reader.result;
+                document.getElementById("imagePreview").style.display = "block";
+            }
+            reader.readAsDataURL(file);
+        }
+    </script>
+</body>
+</html>
